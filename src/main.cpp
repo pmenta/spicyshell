@@ -14,6 +14,10 @@ std::vector<std::string> split(const std::string &s, char delim) {
   return elems;
 }
 
+void echo(const std::string& text) {
+  std::cout << text << std::endl;
+}
+
 int main() {
   // Flush after every std::cout / std:cerr
   std::cout << std::unitbuf;
@@ -26,13 +30,19 @@ int main() {
     std::getline(std::cin, input);
 
     std::vector<std::string> tokens = split(input, ' ');
-
     if (!tokens.empty()) {
-      if (tokens[0] == "exit") {
+      if (tokens[0] == "echo") {
+        std::string params;
+        for (int i = 1; i < tokens.size(); i++) {
+          params += i == 1 ? tokens[i] : " " + tokens[i];
+        }
+
+        echo(params);
+      } else if  (tokens[0] == "exit") {
         return std::stoi(tokens[1]);
+      } else {
+        std::cout << input << ": command not found\n";
       }
     }
-
-    std::cout << input << ": command not found\n";
   }
 }
