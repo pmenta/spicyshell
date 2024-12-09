@@ -1,4 +1,3 @@
-#include <complex>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -23,7 +22,11 @@ void echo(const std::string& text) {
   std::cout << text << std::endl;
 }
 
-enum class Builtin { echo, exit, type, unknown };
+void pwd() {
+  std::cout << fs::current_path().string() << std::endl;
+}
+
+enum class Builtin { echo, exit, type, pwd,unknown };
 Builtin parseCommand(const std::string& command) {
   if (command == "echo") {
     return Builtin::echo;
@@ -31,6 +34,8 @@ Builtin parseCommand(const std::string& command) {
     return Builtin::exit;
   } else if (command == "type") {
     return Builtin::type;
+  } else if (command == "pwd") {
+    return Builtin::pwd;
   } else {
     return Builtin::unknown;
   }
@@ -42,9 +47,9 @@ std::string findExecutable(const std::string& command) {
   if (const char* pathEnvVar = std::getenv("PATH"); pathEnvVar) {
     const std::string path = pathEnvVar;
     std::vector<std::string> paths = split(path, ':');
-    for (const std::string& path : paths) {
+    for (const std::string& p : paths) {
       if (!pathToArg.empty()) break;
-      for (const auto& entry : fs::directory_iterator(path)) {
+      for (const auto& entry : fs::directory_iterator(p)) {
         if (!pathToArg.empty()) break;
         auto vecDir = split(entry.path().string(), '/');
         if (const auto& lastItem = vecDir[vecDir.size() - 1]; lastItem == command) {
@@ -74,7 +79,6 @@ void type(const Args& tokens) {
 }
 
 int main() {
-  // Flush after every std::cout / std:cerr
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
 
@@ -95,6 +99,8 @@ int main() {
         return std::stoi(tokens[1]);
       } else if (command == Builtin::type) {
         type(tokens);
+      } else if (command == Builtin::pwd) {
+        pwd();
       } else {
         if (auto localPath = findExecutable(tokens[0]); localPath.empty()) {
           std::cout << input << ": command not found\n";
