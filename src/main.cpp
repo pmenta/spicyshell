@@ -36,8 +36,7 @@ Builtin parseCommand(const std::string& command) {
   }
 }
 
-void type(const Args& tokens) {
-  const Builtin arg = parseCommand(tokens[1]);
+std::string findExecutable(const std::string& command) {
   std::string pathToArg;
 
   if (const char* pathEnvVar = std::getenv("PATH"); pathEnvVar) {
@@ -48,14 +47,20 @@ void type(const Args& tokens) {
       for (const auto& entry : fs::directory_iterator(path)) {
         if (!pathToArg.empty()) break;
         auto vecDir = split(entry.path().string(), '/');
-        const auto& lastItem = vecDir[vecDir.size() - 1];
-        if (lastItem == tokens[1]) {
+        if (const auto& lastItem = vecDir[vecDir.size() - 1]; lastItem == command) {
           pathToArg = entry.path().string();
           break;
         }
       }
     }
   }
+
+  return pathToArg;
+}
+
+void type(const Args& tokens) {
+  const Builtin arg = parseCommand(tokens[1]);
+  const std::string pathToArg = findExecutable(tokens[1]);
 
   if (arg != Builtin::unknown) {
     std::cout << tokens[1] + " is a shell builtin\n";
@@ -91,7 +96,23 @@ int main() {
       } else if (command == Builtin::type) {
         type(tokens);
       } else {
-        std::cout << input << ": command not found\n";
+        if (auto localPath = findExecutable(tokens[0]); localPath.empty()) {
+          std::cout << input << ": command not found\n";
+        } else {
+          std::string runParams = localPath + " ";
+
+          int index = 0;
+          for (const auto & token : tokens) {
+            if (index == 0) {
+              index++;
+              continue;
+            };
+
+            runParams += token + " ";
+          }
+
+          system(runParams.c_str());
+        }
       }
     }
   }
